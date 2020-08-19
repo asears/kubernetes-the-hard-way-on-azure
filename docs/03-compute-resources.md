@@ -103,7 +103,7 @@ az network lb create -g kubernetes \
 Verify the `kubernetes-pip` static IP address was created correctly in the `kubernetes` Resource Group and chosen region:
 
 ```shell
-az network public-ip  list --query="[?name=='kubernetes-pip'].{ResourceGroup:resourceGroup, \
+az network public-ip list --query="[?name=='kubernetes-pip'].{ResourceGroup:resourceGroup, \
   Region:location,Allocation:publicIpAllocationMethod,IP:ipAddress}" -o table
 ```
 
@@ -126,19 +126,19 @@ az vm image list --location eastus2 --publisher Canonical --offer UbuntuServer -
 ```
 
 ```shell
-UBUNTULTS="Canonical:UbuntuServer:18.04-LTS:18.04.201906170"
+UBUNTULTS="Canonical:UbuntuServer:18.04-LTS:18.04.202002180"
 ```
 
 ### Kubernetes Controllers
 
-Create three compute instances which will host the Kubernetes control plane in `controller-as` [Availability Set](https://docs.microsoft.com/azure/virtual-machines/linux/tutorial-availability-sets#availability-set-overview):
+Create two compute instances which will host the Kubernetes control plane in `controller-as` [Availability Set](https://docs.microsoft.com/azure/virtual-machines/linux/tutorial-availability-sets#availability-set-overview):
 
 ```shell
 az vm availability-set create -g kubernetes -n controller-as
 ```
 
 ```shell
-for i in 0 1 2; do
+for i in 0 1; do
     echo "[Controller ${i}] Creating public IP..."
     az network public-ip create -n controller-${i}-pip -g kubernetes > /dev/null
 
@@ -160,8 +160,8 @@ for i in 0 1 2; do
         --nics controller-${i}-nic \
         --availability-set controller-as \
         --nsg '' \
-        --admin-username 'kuberoot' > /dev/null \
-        --generate-ssh-keys
+        --admin-username 'kuberoot' \
+        --generate-ssh-keys > /dev/null
 done
 ```
 
@@ -171,14 +171,14 @@ Each worker instance requires a pod subnet allocation from the Kubernetes cluste
 
 > The Kubernetes cluster CIDR range is defined by the Controller Manager's `--cluster-cidr` flag. In this tutorial the cluster CIDR range will be set to `10.240.0.0/16`, which supports 254 subnets.
 
-Create three compute instances which will host the Kubernetes worker nodes in `worker-as` Availability Set:
+Create two compute instances which will host the Kubernetes worker nodes in `worker-as` Availability Set:
 
 ```shell
 az vm availability-set create -g kubernetes -n worker-as
 ```
 
 ```shell
-for i in 0 1 2; do
+for i in 0 1; do
     echo "[Worker ${i}] Creating public IP..."
     az network public-ip create -n worker-${i}-pip -g kubernetes > /dev/null
 
@@ -199,8 +199,8 @@ for i in 0 1 2; do
         --tags pod-cidr=10.200.${i}.0/24 \
         --availability-set worker-as \
         --nsg '' \
-        --admin-username 'kuberoot' > /dev/null \
-        --generate-ssh-keys
+        --generate-ssh-keys \
+        --admin-username 'kuberoot' > /dev/null
 done
 ```
 
@@ -217,12 +217,10 @@ az vm list -d -g kubernetes -o table
 ```shell
 Name          ResourceGroup    PowerState    PublicIps       Location
 ------------  ---------------  ------------  --------------  ----------
-controller-0  kubernetes       VM running    XX.XXX.XXX.XXX  westus2
-controller-1  kubernetes       VM running    XX.XXX.XXX.XXX  westus2
-controller-2  kubernetes       VM running    XX.XXX.XXX.XXX  westus2
-worker-0      kubernetes       VM running    XX.XXX.XXX.XXX  westus2
-worker-1      kubernetes       VM running    XX.XXX.XXX.XXX  westus2
-worker-2      kubernetes       VM running    XX.XXX.XXX.XXX  westus2
+controller-0  kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
+controller-1  kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
+worker-0      kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
+worker-1      kubernetes       VM running    XX.XXX.XXX.XXX  eastus2
 ```
 
 Next: [Provisioning a CA and Generating TLS Certificates](04-certificate-authority.md)
